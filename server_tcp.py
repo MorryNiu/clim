@@ -1,6 +1,7 @@
 import socket
 import threading
 import sys
+import time
 
 def build_server(host='127.0.0.1',port=8888):
 
@@ -36,6 +37,7 @@ def tcplink(sock, addr):
     sock.send(b'Welcome to the service')
     while True:
         data = sock.recv(1024)
+        time.sleep(1)
         if not data or data.decode('utf-8') == 'exit':
             break
         sock.send(('Ok..{}'.format(data.decode('utf-8'))).encode(encoding='utf-8'))
