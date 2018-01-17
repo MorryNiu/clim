@@ -2,7 +2,7 @@ import socket
 import threading
 import sys
 
-def build_server(host='127.0.0.1', port=8888):
+def build_server(host='0.0.0.0', port=8888):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print('Socket Created')
@@ -14,7 +14,7 @@ def build_server(host='127.0.0.1', port=8888):
     sock.bind((host, port))
 
     sock.listen(10)
-    print('Server', socket.gethostbyname('localhost'), 'listening ...')
+    print('Server', socket.gethostbyname(host), 'listening ...')
 
     while True:
         connection, addr = sock.accept()
