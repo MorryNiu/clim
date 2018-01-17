@@ -3,6 +3,7 @@ import time
 import threading
 import sys
 
+
 def build_client(host='127.0.0.1', port=8888):
 
     try:
@@ -28,16 +29,20 @@ def build_client(host='127.0.0.1', port=8888):
 
     return sock
 
+
 def sendThreadFunc(sock):
     while True:
         try:
-            myword = input()
-            sock.send(myword.encode())
-            #print(sock.recv(1024).decode())
+            word = input()
+            if word == '$':
+                command(sock)
+            else:
+                sock.send(word.encode())
         except ConnectionAbortedError:
             print('Server closed this connection!')
         except ConnectionResetError:
             print('Server is closed!')
+
 
 def recvThreadFunc(sock):
     while True:
@@ -54,8 +59,23 @@ def recvThreadFunc(sock):
             print('Server is closed!')
 
 
+def command(sock):
+    print('-------------------command mode-----------------------')
+    clist = ['exit','get_file']
+    while True:
+        c = str(input('>> '))
+        c = c.lower()
+        if c in clist:
+            if clist.index(c) == 0:
+                print('-------------------command exit-----------------------')
+                return
+        else:
+            print('Command not found, use EXIT to exit command mode')
+
+
 def main():
     sock = build_client()
+    print('-------------------start chating-----------------------')
     th1 = threading.Thread(target=sendThreadFunc, args=(sock,))
     th2 = threading.Thread(target=recvThreadFunc, args=(sock,))
     threads = [th1, th2]
@@ -63,7 +83,7 @@ def main():
     for t in threads :
         t.setDaemon(True)
         t.start()
-        t.join()
+    t.join()
 
 if __name__ == '__main__':
     main()

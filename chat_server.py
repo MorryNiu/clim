@@ -48,7 +48,7 @@ def subThreadIn(myconnection, connNumber):
     mydict[myconnection.fileno()] = nickname
     mylist.append(myconnection)
     print('connection', connNumber, ' has nickname :', nickname)
-    tellOthers(connNumber, '【PROMPT：'+mydict[connNumber]+'has entered the chat room】')
+    tellOthers(connNumber, '【PROMPT：'+mydict[connNumber]+' has entered the chat room】')
 
     while True:
         try:
