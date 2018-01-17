@@ -11,42 +11,35 @@ def build_server(host='127.0.0.1', port=8888):
                 Error message : '.format(str(msg[0]),str(msg[1])))
         sys.exit()
 
-    try:
-        sock.bind((host, port))
-        print('Socket bind to {}:{} complete'.format(host,port))
-    except:
-        print("Bind failed.")
-        sys.exit()
+    sock.bind((host, port))
 
-    sock.listen(5)
+    sock.listen(10)
     print('Server', socket.gethostbyname('localhost'), 'listening ...')
 
     while True:
         connection, addr = sock.accept()
         print('Accept a new connection', connection.getsockname(), connection.fileno())
+
         try:
-            #connection.settimeout(5)
             buf = connection.recv(1024).decode()
             if buf == '1':
                 connection.send(b'welcome to server!')
-
-                #为当前连接开辟一个新的线程
-                mythread = threading.Thread(target=subThreadIn, args=(connection, connection.fileno()))
-                mythread.setDaemon(True)
-                mythread.start()
-
+                #open a new thread for current connection
+                t = threading.Thread(target=subThreadIn, args=(connection, connection.fileno()))
+                t.setDaemon(True)
+                t.start()
             else:
                 connection.send(b'Too many people are there!')
                 connection.close()
         except :
             pass
 
-#把whatToSay传给除了exceptNum的所有人
-def tellOthers(exceptNum, whatToSay):
+# send mes to all clients except exceptNum
+def tellOthers(exceptNum, mes):
     for c in mylist:
         if c.fileno() != exceptNum :
             try:
-                c.send(whatToSay.encode())
+                c.send(mes.encode())
             except:
                 pass
 
@@ -56,6 +49,7 @@ def subThreadIn(myconnection, connNumber):
     mylist.append(myconnection)
     print('connection', connNumber, ' has nickname :', nickname)
     tellOthers(connNumber, '【PROMPT：'+mydict[connNumber]+'has entered the chat room】')
+
     while True:
         try:
             recvedMsg = myconnection.recv(1024).decode()
