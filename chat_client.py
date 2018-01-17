@@ -33,7 +33,7 @@ def sendThreadFunc(sock):
         try:
             myword = input()
             sock.send(myword.encode())
-            print(sock.recv(1024).decode())
+            #print(sock.recv(1024).decode())
         except ConnectionAbortedError:
             print('Server closed this connection!')
         except ConnectionResetError:
