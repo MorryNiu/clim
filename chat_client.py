@@ -2,6 +2,7 @@ import socket
 import time
 import threading
 import sys
+from command import command as cd
 
 
 def build_client(host='127.0.0.1', port=8888):
@@ -31,11 +32,13 @@ def build_client(host='127.0.0.1', port=8888):
 
 
 def sendThreadFunc(sock):
+    global c_mode
     while True:
         try:
             word = input()
             if word == '$':
-                command(sock)
+                c_mode = True
+                cd(sock)
             else:
                 sock.send(word.encode())
         except ConnectionAbortedError:
@@ -45,11 +48,15 @@ def sendThreadFunc(sock):
 
 
 def recvThreadFunc(sock):
+    global c_mode
     while True:
         try:
             otherword = sock.recv(1024)
             if otherword:
                 print(otherword.decode())
+                if c_mode:
+                    print('-------------------command exit-----------------------')
+                    c_mode = False
             else:
                 pass
         except ConnectionAbortedError:
@@ -59,31 +66,17 @@ def recvThreadFunc(sock):
             print('Server is closed!')
 
 
-def command(sock):
-    print('-------------------command mode-----------------------')
-    clist = ['exit','get_file']
-    while True:
-        c = str(input('>> '))
-        c = c.lower()
-        if c in clist:
-            if clist.index(c) == 0:
-                print('-------------------command exit-----------------------')
-                return
-        else:
-            print('Command not found, use EXIT to exit command mode')
-
-
 def main():
     sock = build_client()
     print('-------------------start chating-----------------------')
     th1 = threading.Thread(target=sendThreadFunc, args=(sock,))
     th2 = threading.Thread(target=recvThreadFunc, args=(sock,))
     threads = [th1, th2]
-
     for t in threads :
         t.setDaemon(True)
         t.start()
     t.join()
 
 if __name__ == '__main__':
+    c_mode = False
     main()

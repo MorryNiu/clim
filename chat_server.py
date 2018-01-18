@@ -17,20 +17,20 @@ def build_server(host='0.0.0.0', port=8888):
     print('Server', socket.gethostbyname(host), 'listening ...')
 
     while True:
-        connection, addr = sock.accept()
-        print('Accept a new connection', connection.getsockname(), connection.fileno())
+        con, addr = sock.accept()
+        print('Accept a new connection', con.getsockname(), con.fileno())
 
         try:
-            buf = connection.recv(1024).decode()
+            buf = con.recv(1024).decode()
             if buf == '1':
-                connection.send(b'welcome to server!')
+                con.send(b'welcome to server!')
                 #open a new thread for current connection
-                t = threading.Thread(target=subThreadIn, args=(connection, connection.fileno()))
+                t = threading.Thread(target=subThreadIn, args=(con, con.fileno()))
                 t.setDaemon(True)
                 t.start()
             else:
-                connection.send(b'Too many people are there!')
-                connection.close()
+                con.send(b'Too many people are there!')
+                con.close()
         except :
             pass
 
@@ -41,34 +41,58 @@ def tellOthers(exceptNum, mes):
             try:
                 c.send(mes.encode())
             except:
-                pass
+                print('Failed to send message to '+str(mydict[c.fileno()]))
 
-def subThreadIn(myconnection, connNumber):
-    nickname = myconnection.recv(1024).decode()
-    mydict[myconnection.fileno()] = nickname
-    mylist.append(myconnection)
-    print('connection', connNumber, ' has nickname :', nickname)
-    tellOthers(connNumber, '【PROMPT：'+mydict[connNumber]+' has entered the chat room】')
+
+def tellOne(sock, mes):
+    try:
+        sock.send(mes.encode())
+    except:
+        print('Failed to send message to '+str(mydict[sock.fileno()]))
+
+
+def command(con, conNum):
+    print(mydict[conNum], 'is using command mode')
+    clist = ['get_file','put_file','people']
+    word = con.recv(1024).decode()
+    if word == 'people':
+        fre = []
+        for p in mydict.values():
+            fre.append(p)
+        fre = list(set(fre))
+        tellOne(con, ' '.join(fre))
+    print('Finished ',mydict[conNum], '\'s work')
+
+
+def subThreadIn(con, conNum):
+    nickname = con.recv(1024).decode()
+    mydict[con.fileno()] = nickname
+    mylist.append(con)
+    print('con', conNum, ' has nickname :', nickname)
+    tellOthers(conNum, '【PROMPT：'+mydict[conNum]+' has entered the chat room】')
 
     while True:
         try:
-            recvedMsg = myconnection.recv(1024).decode()
+            recvedMsg = con.recv(1024).decode()
             if recvedMsg:
-                print(mydict[connNumber], ':', recvedMsg)
-                tellOthers(connNumber, mydict[connNumber]+' :'+recvedMsg)
+                if recvedMsg == '$%$cm':
+                    command(con, conNum)
+                else:
+                    print(mydict[conNum], ':', recvedMsg)
+                    tellOthers(conNum, mydict[conNum]+' :'+recvedMsg)
 
         except (OSError, ConnectionResetError):
             try:
-                mylist.remove(myconnection)
+                mylist.remove(con)
             except:
                 pass
-            print(mydict[connNumber], 'exit, ', len(mylist), ' person left')
-            tellOthers(connNumber, '【PROMPT：'+mydict[connNumber]+' has left the chat room 】')
-            myconnection.close()
+            print(mydict[conNum], 'exit, ', len(mylist), ' person left')
+            tellOthers(conNum, '【PROMPT：'+mydict[conNum]+' has left the chat room 】')
+            con.close()
             return
 
-mydict = {}
-mylist = []
+mydict = {} # stroe the connection num:nickname
+mylist = [] # stroe the connection (socket)
 
 if __name__ == '__main__':
     build_server()
